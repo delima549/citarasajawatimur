@@ -138,11 +138,24 @@ if ($kulinerPublicationColumn && mysqli_num_rows($kulinerPublicationColumn) === 
 }
 
 $adminCheck = mysqli_query($conn, "SELECT id FROM admin_users LIMIT 1");
-if ($adminCheck && mysqli_num_rows($adminCheck) === 0 && $initialAdminPassword !== '') {
+if ($adminCheck && $initialAdminPassword !== '') {
     $hashedAdminPassword = password_hash($initialAdminPassword, PASSWORD_DEFAULT);
-    $adminStmt = mysqli_prepare($conn, "INSERT INTO admin_users (username, password) VALUES (?, ?)");
-    mysqli_stmt_bind_param($adminStmt, "ss", $initialAdminUsername, $hashedAdminPassword);
-    mysqli_stmt_execute($adminStmt);
+    if (mysqli_num_rows($adminCheck) === 0) {
+        $adminStmt = mysqli_prepare($conn, "INSERT INTO admin_users (username, password) VALUES (?, ?)");
+        mysqli_stmt_bind_param($adminStmt, "ss", $initialAdminUsername, $hashedAdminPassword);
+        mysqli_stmt_execute($adminStmt);
+    } else {
+        $adminUsers = mysqli_query($conn, "SELECT id, password FROM admin_users");
+        while ($adminUsers && ($admin = mysqli_fetch_assoc($adminUsers))) {
+            if (!password_verify('admin123', $admin['password'])) {
+                continue;
+            }
+            $adminId = (int) $admin['id'];
+            $adminStmt = mysqli_prepare($conn, "UPDATE admin_users SET password = ? WHERE id = ?");
+            mysqli_stmt_bind_param($adminStmt, "si", $hashedAdminPassword, $adminId);
+            mysqli_stmt_execute($adminStmt);
+        }
+    }
 }
 
 require_once __DIR__ . '/content.php';
