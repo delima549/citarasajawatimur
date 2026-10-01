@@ -344,9 +344,8 @@ function ensure_regional_culinary_catalog(mysqli $conn): void
     }
 
     $areaStmt = mysqli_prepare($conn, 'SELECT id, nama FROM daerah WHERE slug = ? LIMIT 1');
-    $existsStmt = mysqli_prepare($conn, 'SELECT id, deskripsi, sejarah, resep_bahan, resep_langkah, gambar FROM kuliner WHERE daerah_id = ? AND nama_makanan = ? LIMIT 1');
+    $existsStmt = mysqli_prepare($conn, 'SELECT id, deskripsi, sejarah, resep_bahan, resep_langkah FROM kuliner WHERE daerah_id = ? AND nama_makanan = ? LIMIT 1');
     $updateStmt = mysqli_prepare($conn, 'UPDATE kuliner SET kategori = ?, deskripsi = ?, sejarah = ?, resep_bahan = ?, resep_langkah = ? WHERE id = ?');
-    $updateImageStmt = mysqli_prepare($conn, 'UPDATE kuliner SET gambar = ? WHERE id = ?');
     $insertStmt = mysqli_prepare($conn, 'INSERT INTO kuliner (daerah_id, nama_makanan, slug, wilayah, harga, harga_min, harga_max, rating, jumlah_penilai, kategori, deskripsi, sejarah, resep_bahan, resep_langkah, gambar, is_rekomendasi, publikasi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)');
     $placeStmt = mysqli_prepare($conn, 'INSERT INTO kuliner_tempat (kuliner_id, nama_tempat, alamat, catatan) VALUES (?, ?, ?, ?)');
 
@@ -368,10 +367,6 @@ function ensure_regional_culinary_catalog(mysqli $conn): void
             mysqli_stmt_execute($existsStmt);
             $existing = mysqli_stmt_get_result($existsStmt)->fetch_assoc();
             if ($existing) {
-                if ($customImage && $existing['gambar'] !== $customImage) {
-                    mysqli_stmt_bind_param($updateImageStmt, 'si', $customImage, $existing['id']);
-                    mysqli_stmt_execute($updateImageStmt);
-                }
                 $hasGeneratedContent = str_starts_with($existing['deskripsi'], $name . ' adalah kuliner khas ')
                     || str_starts_with($existing['resep_bahan'], 'Bahan utama ');
                 if ($details && $hasGeneratedContent) {
